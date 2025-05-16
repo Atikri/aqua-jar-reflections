@@ -7,62 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { Search, ArrowRight } from "lucide-react";
+import { blogPosts } from "@/data/blogPosts";
 
 const Blogs = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: "快速使用Hugo搭建个人博客",
-      excerpt: "一个简单的指南，教你如何使用Hugo快速搭建自己的个人博客网站...",
-      date: "2023-05-15",
-      category: "技术",
-      tags: ["Hugo", "博客", "网站建设"]
-    },
-    {
-      id: 2,
-      title: "我最近听的5首歌曲推荐",
-      excerpt: "分享一下最近发现的5首好听的歌曲，希望你也会喜欢...",
-      date: "2023-05-10",
-      category: "音乐",
-      tags: ["音乐", "推荐", "歌单"]
-    },
-    {
-      id: 3,
-      title: "关于写作的一些思考",
-      excerpt: "最近对写作产生了一些新的想法和思考，在这篇文章中我想分享一下...",
-      date: "2023-05-05",
-      category: "随笔",
-      tags: ["写作", "思考", "创作"]
-    },
-    {
-      id: 4,
-      title: "我喜欢的5本书",
-      excerpt: "这些书籍对我产生了深远的影响，推荐给所有喜欢阅读的人...",
-      date: "2023-04-28",
-      category: "阅读",
-      tags: ["书籍", "阅读", "推荐"]
-    },
-    {
-      id: 5,
-      title: "如何提高自己的创作力",
-      excerpt: "探索一些有效的方法和技巧，帮助你提高创作力和灵感...",
-      date: "2023-04-20",
-      category: "创作",
-      tags: ["创作", "灵感", "技巧"]
-    },
-    {
-      id: 6,
-      title: "旅行中的小确幸",
-      excerpt: "分享一些在旅行中遇到的小确幸和感动的瞬间...",
-      date: "2023-04-15",
-      category: "旅行",
-      tags: ["旅行", "记忆", "分享"]
-    },
-  ];
-
-  const categories = ["全部", "技术", "音乐", "随笔", "阅读", "创作", "旅行"];
+  // 提取所有唯一的分类
+  const allCategories = ["全部", ...Array.from(new Set(blogPosts.map(post => post.category)))];
 
   // Filter posts based on search query and category
   const filteredPosts = (category: string) => {
@@ -114,14 +65,14 @@ const Blogs = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Tabs defaultValue="全部" className="w-full">
             <TabsList className="mb-8 flex flex-wrap">
-              {categories.map((category) => (
+              {allCategories.map((category) => (
                 <TabsTrigger key={category} value={category}>
                   {category}
                 </TabsTrigger>
               ))}
             </TabsList>
             
-            {categories.map((category) => (
+            {allCategories.map((category) => (
               <TabsContent key={category} value={category}>
                 {filteredPosts(category).length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

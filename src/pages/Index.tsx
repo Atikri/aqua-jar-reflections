@@ -3,32 +3,14 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Book, Music, BookAudio } from "lucide-react";
+import { ArrowRight, Book, Music } from "lucide-react";
+import { blogPosts } from "@/data/blogPosts";
 
 const Index = () => {
-  const recentPosts = [
-    {
-      id: 1,
-      title: "快速使用Hugo搭建个人博客",
-      excerpt: "一个简单的指南，教你如何使用Hugo快速搭建自己的个人博客网站...",
-      date: "2023-05-15",
-      category: "技术",
-    },
-    {
-      id: 2,
-      title: "我最近听的5首歌曲推荐",
-      excerpt: "分享一下最近发现的5首好听的歌曲，希望你也会喜欢...",
-      date: "2023-05-10",
-      category: "音乐",
-    },
-    {
-      id: 3,
-      title: "关于写作的一些思考",
-      excerpt: "最近对写作产生了一些新的想法和思考，在这篇文章中我想分享一下...",
-      date: "2023-05-05",
-      category: "随笔",
-    },
-  ];
+  // 获取最新的3篇博客文章
+  const recentPosts = [...blogPosts]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 3);
 
   return (
     <Layout>
@@ -96,7 +78,7 @@ const Index = () => {
           <h2 className="text-2xl md:text-3xl font-serif font-semibold text-gray-900 mb-8 text-center">
             探索内容分类
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card className="overflow-hidden hover:shadow-md transition-shadow bg-white">
               <CardContent className="p-8 flex flex-col items-center text-center">
                 <Book className="h-12 w-12 text-aqua-dark mb-4" />
@@ -118,18 +100,6 @@ const Index = () => {
                 </p>
                 <Button asChild variant="outline" className="border-aqua-dark text-aqua-dark hover:bg-aqua-light mt-2">
                   <Link to="/music">聆听音乐</Link>
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden hover:shadow-md transition-shadow bg-white">
-              <CardContent className="p-8 flex flex-col items-center text-center">
-                <BookAudio className="h-12 w-12 text-aqua-dark mb-4" />
-                <h3 className="text-xl font-semibold mb-2">视频</h3>
-                <p className="text-gray-600 mb-4">
-                  视频内容、创意作品和各种有趣的视频分享
-                </p>
-                <Button asChild variant="outline" className="border-aqua-dark text-aqua-dark hover:bg-aqua-light mt-2">
-                  <Link to="/videos">观看视频</Link>
                 </Button>
               </CardContent>
             </Card>

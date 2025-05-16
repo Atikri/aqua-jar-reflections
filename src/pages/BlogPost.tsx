@@ -1,61 +1,22 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { blogPosts } from "@/data/blogPosts";
 
 const BlogPost = () => {
   const { id } = useParams<{ id: string }>();
   
-  // Mock blog post data (in a real app, this would be fetched from an API)
-  const post = {
-    id: Number(id),
-    title: "快速使用Hugo搭建个人博客",
-    content: `
-      <p>Hugo是一个优秀的静态网站生成器，特别适合用来搭建个人博客。在这篇文章中，我将分享如何快速使用Hugo搭建一个个人博客网站。</p>
-      
-      <h2>第一步：安装Hugo</h2>
-      <p>首先，我们需要在本地电脑上安装Hugo。Hugo支持多种操作系统，包括Windows、macOS和Linux。</p>
-      <p>在macOS上，你可以使用Homebrew来安装Hugo：</p>
-      <pre><code>brew install hugo</code></pre>
-      
-      <h2>第二步：创建新网站</h2>
-      <p>安装完成后，我们可以使用Hugo创建一个新的网站：</p>
-      <pre><code>hugo new site my-blog</code></pre>
-      <p>这将创建一个名为"my-blog"的目录，该目录中包含了Hugo网站的基本结构。</p>
-      
-      <h2>第三步：安装主题</h2>
-      <p>Hugo支持多种主题，可以在Hugo官方主题库中找到自己喜欢的主题。以下是安装主题的基本步骤：</p>
-      <pre><code>cd my-blog
-      git init
-      git submodule add https://github.com/budparr/gohugo-theme-ananke.git themes/ananke
-      echo 'theme = "ananke"' >> config.toml</code></pre>
-      
-      <h2>第四步：创建内容</h2>
-      <p>现在，我们可以开始创建博客内容了。Hugo使用Markdown格式存储内容：</p>
-      <pre><code>hugo new posts/my-first-post.md</code></pre>
-      <p>这将在content/posts目录下创建一个名为my-first-post.md的文件。你可以用Markdown编辑器打开这个文件，编辑你的文章内容。</p>
-      
-      <h2>第五步：本地预览</h2>
-      <p>在发布之前，你可以在本地预览你的网站：</p>
-      <pre><code>hugo server -D</code></pre>
-      <p>现在，你可以在浏览器中访问http://localhost:1313预览你的网站。</p>
-      
-      <h2>第六步：构建与部署</h2>
-      <p>当你准备好发布你的网站时，可以使用以下命令构建静态网站：</p>
-      <pre><code>hugo</code></pre>
-      <p>这将在public目录下生成静态网站文件。你可以将这些文件上传到Web服务器或GitHub Pages等平台来发布你的网站。</p>
-      
-      <h2>总结</h2>
-      <p>使用Hugo搭建个人博客非常简单快捷。通过以上六个步骤，你已经可以拥有一个功能完整的个人博客网站了。希望这篇文章对你有所帮助！</p>
-    `,
-    date: "2023-05-15",
-    author: "tikri",
-    tags: ["Hugo", "博客", "网站建设"],
-    category: "技术"
-  };
+  // 查找对应 ID 的博客文章
+  const post = blogPosts.find(post => post.id === Number(id));
+  
+  // 如果找不到博客文章，则重定向到 404 页面
+  if (!post) {
+    return <Navigate to="/404" replace />;
+  }
 
   return (
     <Layout>
