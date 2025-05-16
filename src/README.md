@@ -1,10 +1,13 @@
 
 
+
 # AQUA IN JAR 博客网站
 
 ## 如何发布新的博客文章
 
-要发布新的博客文章，请按照以下步骤操作：
+要发布新的博客文章，你有两种方法：
+
+### 方法一：在blogPosts.tsx中直接添加HTML内容
 
 1. 打开 GitHub 仓库中的 `src/data/blogPosts.tsx` 文件。
 
@@ -20,9 +23,7 @@
    - `tags`: 标签数组
    - `category`: 分类名称
 
-4. 文章内容可以使用 HTML 格式，支持标题、段落、列表、代码块等元素。
-
-5. 示例：
+4. 示例：
 ```typescript
 {
   id: 7,
@@ -44,9 +45,44 @@
 }
 ```
 
-6. 添加完成后，提交并推送更改到 GitHub 仓库。
+### 方法二：使用Markdown文件（推荐）
 
-7. 网站将自动更新，显示你的新博客文章。
+1. 创建一个新的Markdown文件（.md），放在 `src/content/blog/` 目录下，例如 `my-post.md`。
+
+2. 在Markdown文件中编写博客内容，例如：
+```markdown
+# 我的博客标题
+
+这是博客内容的第一段。
+
+## 小标题
+
+- 列表项1
+- 列表项2
+
+### 代码示例
+```javascript
+console.log("Hello, world!");
+```
+
+3. 在 `src/data/blogPosts.tsx` 文件中，添加一个新的博客文章对象，但使用 `markdownFile` 而不是 `content` 字段：
+
+```typescript
+{
+  id: 8,
+  title: "使用Markdown写的博客",
+  excerpt: "这是一篇使用Markdown格式的博客文章...",
+  markdownFile: "/src/content/blog/my-post.md",
+  date: "2023-06-05",
+  author: "tikri",
+  tags: ["Markdown", "博客"],
+  category: "技术"
+}
+```
+
+4. 保存并提交更改到GitHub仓库。
+
+5. 网站将自动更新，显示新的博客文章。
 
 ## 如何上传音乐
 
@@ -60,7 +96,7 @@
 
 ### 方法二：通过代码添加（永久存储）
 
-要永久添加音乐到网站，请修改 `src/pages/Music.tsx` 文件中的 `musicTracks` 数组：
+要永久添加音乐到网站，请修改 `src/data/musicTracks.tsx` 文件中的 `musicTracks` 数组：
 
 1. 首先将您的音乐文件上传到网络存储服务（如七牛云、阿里云 OSS 或 GitHub 等）。
 
@@ -89,7 +125,7 @@
 
 - 确保每篇文章和每首音乐都有一个唯一的 `id`。
 - 日期格式应为 `YYYY-MM-DD`。
-- 文章内容支持 HTML 格式，可以包含标题、段落、列表、代码块等元素。
+- 文章内容支持 HTML 格式和Markdown格式，可以根据需要选择。
 - 音乐文件应上传到可公开访问的网络存储服务，并确保 URL 是长期有效的。
 - 添加大量音乐后，可能需要考虑将音乐数据移至单独的数据文件中，类似于博客文章的处理方式。
 

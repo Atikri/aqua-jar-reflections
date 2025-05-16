@@ -6,9 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { blogPosts } from "@/data/blogPosts";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useEffect, useState } from "react";
 
 const BlogPost = () => {
   const { id } = useParams<{ id: string }>();
+  const [markdownContent, setMarkdownContent] = useState<string | null>(null);
   
   // 查找对应 ID 的博客文章
   const post = blogPosts.find(post => post.id === Number(id));
@@ -17,6 +21,31 @@ const BlogPost = () => {
   if (!post) {
     return <Navigate to="/404" replace />;
   }
+
+  // 如果博客有Markdown文件，则加载它
+  useEffect(() => {
+    const loadMarkdownContent = async () => {
+      if (post.markdownFile) {
+        try {
+          // 因为我们在前端引用文件，需要移除最开始的"/"
+          const filePathWithoutLeadingSlash = post.markdownFile.replace(/^\//, '');
+          const response = await fetch(`/${filePathWithoutLeadingSlash}`);
+          if (!response.ok) {
+            throw new Error(`Failed to load markdown: ${response.status}`);
+          }
+          const content = await response.text();
+          setMarkdownContent(content);
+        } catch (error) {
+          console.error("Error loading markdown:", error);
+          setMarkdownContent("**Error loading markdown content**");
+        }
+      }
+    };
+
+    if (post.markdownFile) {
+      loadMarkdownContent();
+    }
+  }, [post.markdownFile]);
 
   return (
     <Layout>
@@ -46,10 +75,27 @@ const BlogPost = () => {
             </div>
           </div>
           
-          <div 
-            className="prose prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          {/* 根据内容类型渲染HTML或Markdown */}
+          {post.content && (
+            <div 
+              className="prose prose-lg max-w-none"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+          )}
+          
+          {post.markdownFile && markdownContent && (
+            <div className="prose prose-lg max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {markdownContent}
+              </ReactMarkdown>
+            </div>
+          )}
+          
+          {post.markdownFile && !markdownContent && (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-aqua border-t-transparent"></div>
+            </div>
+          )}
           
           <div className="border-t border-gray-200 mt-12 pt-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

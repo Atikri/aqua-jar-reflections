@@ -1,10 +1,10 @@
-
 // 博客文章数据存储
 export interface BlogPost {
   id: number;
   title: string;
   excerpt: string;
-  content: string;
+  content?: string;        // HTML内容（向后兼容）
+  markdownFile?: string;   // Markdown文件路径
   date: string;
   category: string;
   author: string;
@@ -206,5 +206,17 @@ export const blogPosts: BlogPost[] = [
     author: "tikri",
     tags: ["旅行", "记忆", "分享"],
     category: "旅行"
+  },
+  
+  // 新增的Markdown格式博客
+  {
+    id: 7,
+    title: "使用Markdown撰写博客",
+    excerpt: "尝试使用Markdown格式来撰写博客文章，体验更简洁的写作方式...",
+    markdownFile: "/src/content/blog/hello-markdown.md",
+    date: "2023-06-01",
+    author: "tikri",
+    tags: ["Markdown", "写作", "技巧"],
+    category: "技术"
   }
 ];
