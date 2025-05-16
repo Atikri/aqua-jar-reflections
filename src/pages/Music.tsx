@@ -1,70 +1,22 @@
 
+import React, { useRef, useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileAudio, Play, Music as MusicIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FileAudio, Music as MusicIcon } from "lucide-react";
+import { toast } from "sonner";
+import { musicTracks as initialMusicTracks, MusicTrack } from "@/data/musicTracks";
+import MusicPlayer from "./MusicPlayer";
 
 const Music = () => {
   const musicCategories = ["全部", "原创", "翻唱", "推荐"];
-
-  const musicTracks = [
-    {
-      id: 1,
-      title: "雨后的天空",
-      artist: "tikri",
-      duration: "3:45",
-      date: "2023-05-10",
-      category: "原创",
-      cover: "/placeholder.svg"
-    },
-    {
-      id: 2,
-      title: "Stay With Me - Cover",
-      artist: "tikri (原唱: Sam Smith)",
-      duration: "4:12",
-      date: "2023-04-20",
-      category: "翻唱",
-      cover: "/placeholder.svg"
-    },
-    {
-      id: 3,
-      title: "晴天 - Cover",
-      artist: "tikri (原唱: 周杰伦)",
-      duration: "4:30",
-      date: "2023-03-15",
-      category: "翻唱",
-      cover: "/placeholder.svg"
-    },
-    {
-      id: 4,
-      title: "夜曲",
-      artist: "tikri",
-      duration: "3:55",
-      date: "2023-02-25",
-      category: "原创",
-      cover: "/placeholder.svg"
-    },
-    {
-      id: 5,
-      title: "Summer Vibes",
-      artist: "Fresh Touch",
-      duration: "3:28",
-      date: "2023-01-30",
-      category: "推荐",
-      cover: "/placeholder.svg"
-    },
-    {
-      id: 6,
-      title: "Memories",
-      artist: "The Wave",
-      duration: "4:05",
-      date: "2023-01-15",
-      category: "推荐",
-      cover: "/placeholder.svg"
-    }
-  ];
+  const [currentTrack, setCurrentTrack] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [musicTracks, setMusicTracks] = useState<MusicTrack[]>(initialMusicTracks);
 
   const filteredTracks = (category: string) => {
     return musicTracks.filter(track => 
@@ -72,8 +24,77 @@ const Music = () => {
     );
   };
 
+  const handlePlayPause = (trackId: number) => {
+    if (currentTrack === trackId) {
+      // 如果是当前播放的曲目，切换播放/暂停
+      if (isPlaying) {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current?.play();
+        setIsPlaying(true);
+      }
+    } else {
+      // 如果选择了新曲目
+      setCurrentTrack(trackId);
+      const track = musicTracks.find(t => t.id === trackId);
+      if (track && audioRef.current) {
+        audioRef.current.src = track.file;
+        audioRef.current.play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(error => {
+            console.error("播放失败:", error);
+            toast.error("无法播放此音频文件");
+          });
+      }
+    }
+  };
+
+  const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (!file.type.startsWith('audio/')) {
+      toast.error("请上传音频文件");
+      return;
+    }
+
+    // 创建临时URL
+    const fileUrl = URL.createObjectURL(file);
+    
+    // 获取音频时长
+    const audio = new Audio(fileUrl);
+    audio.onloadedmetadata = () => {
+      const duration = audio.duration;
+      const minutes = Math.floor(duration / 60);
+      const seconds = Math.floor(duration % 60);
+      const durationString = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+      
+      // 添加新音乐
+      const newTrack: MusicTrack = {
+        id: Math.max(...musicTracks.map(t => t.id)) + 1,
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        artist: "tikri",
+        duration: durationString,
+        date: new Date().toISOString().split('T')[0],
+        category: "原创",
+        cover: "/placeholder.svg",
+        file: fileUrl
+      };
+
+      setMusicTracks([...musicTracks, newTrack]);
+      toast.success("音乐上传成功");
+    };
+  };
+
   return (
     <Layout>
+      {/* 隐藏的音频播放器 */}
+      <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+
       {/* Music Header */}
       <section className="bg-aqua-light py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -84,6 +105,33 @@ const Music = () => {
             <p className="text-lg text-gray-700 max-w-2xl mx-auto">
               这里收集了我的原创音乐、翻唱以及一些我喜欢的音乐推荐
             </p>
+            
+            <div className="mt-6">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="bg-aqua-dark hover:bg-aqua">上传音乐</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>上传新音乐</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <p className="text-sm text-gray-500 mb-4">选择要上传的音频文件 (MP3, WAV, OGG 格式)</p>
+                    <input 
+                      type="file" 
+                      accept="audio/*" 
+                      onChange={handleMusicUpload}
+                      className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-aqua-light file:text-aqua-dark
+                        hover:file:bg-aqua-dark hover:file:text-white"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
       </section>
@@ -111,12 +159,12 @@ const Music = () => {
                           alt={track.title} 
                           className="w-full h-full object-cover"
                         />
-                        <Button 
-                          size="icon" 
-                          className="absolute bottom-4 right-4 rounded-full bg-white text-aqua-dark hover:bg-aqua hover:text-white"
-                        >
-                          <Play className="h-5 w-5" />
-                        </Button>
+                        <MusicPlayer 
+                          isPlaying={isPlaying}
+                          trackId={track.id}
+                          currentTrackId={currentTrack}
+                          onPlayPause={handlePlayPause}
+                        />
                       </div>
                       <CardContent className="p-4">
                         <div className="flex justify-between items-center mb-2">
