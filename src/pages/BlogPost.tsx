@@ -14,11 +14,15 @@ const BlogPost = () => {
   const { id } = useParams<{ id: string }>();
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
   
+  const numericId = id ? parseInt(id) : 0;
+  console.log("Parsed numeric ID:", numericId, "Raw ID from params:", id);
+  
   // Find the blog post with the matching ID from URL params
-  const post = blogPosts.find(post => post.id === parseInt(id || "0"));
+  const post = blogPosts.find(post => post.id === numericId);
   
   // If no post is found, redirect to 404 page
   if (!post) {
+    console.log("No post found with ID:", numericId);
     return <Navigate to="/404" replace />;
   }
 
@@ -44,12 +48,16 @@ const BlogPost = () => {
 
     if (post.markdownFile) {
       loadMarkdownContent();
+    } else {
+      // Reset markdown content when viewing non-markdown posts
+      setMarkdownContent(null);
     }
-    // Clear markdown content when post changes
+    
+    // Clean up function to clear markdown content when unmounting
     return () => setMarkdownContent(null);
-  }, [post.markdownFile, post.id]); // Add post.id as dependency to refresh when post changes
+  }, [post.markdownFile, post.id, numericId]); // Add numericId as dependency
 
-  console.log("Current post ID:", id, "Post found:", post ? post.title : "none");
+  console.log("Current post ID:", numericId, "Post found:", post.title, "Has markdown:", !!post.markdownFile);
 
   return (
     <Layout>
