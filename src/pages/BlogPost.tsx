@@ -15,7 +15,7 @@ const BlogPost = () => {
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
   
   // Find the blog post with the matching ID from URL params
-  const post = blogPosts.find(post => post.id === Number(id));
+  const post = blogPosts.find(post => post.id === parseInt(id || "0"));
   
   // If no post is found, redirect to 404 page
   if (!post) {
@@ -45,7 +45,11 @@ const BlogPost = () => {
     if (post.markdownFile) {
       loadMarkdownContent();
     }
+    // Clear markdown content when post changes
+    return () => setMarkdownContent(null);
   }, [post.markdownFile, post.id]); // Add post.id as dependency to refresh when post changes
+
+  console.log("Current post ID:", id, "Post found:", post ? post.title : "none");
 
   return (
     <Layout>
