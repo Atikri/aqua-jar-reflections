@@ -12,7 +12,7 @@ import { blogPosts } from "@/data/blogPosts";
 const Blogs = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 提取所有唯一的分类
+  // Extract all unique categories
   const allCategories = ["全部", ...Array.from(new Set(blogPosts.map(post => post.category)))];
 
   // Filter posts based on search query and category

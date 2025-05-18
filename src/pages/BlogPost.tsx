@@ -14,20 +14,20 @@ const BlogPost = () => {
   const { id } = useParams<{ id: string }>();
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
   
-  // 查找对应 ID 的博客文章
+  // Find the blog post with the matching ID from URL params
   const post = blogPosts.find(post => post.id === Number(id));
   
-  // 如果找不到博客文章，则重定向到 404 页面
+  // If no post is found, redirect to 404 page
   if (!post) {
     return <Navigate to="/404" replace />;
   }
 
-  // 如果博客有Markdown文件，则加载它
   useEffect(() => {
+    // Only load markdown content if the post has a markdownFile
     const loadMarkdownContent = async () => {
       if (post.markdownFile) {
         try {
-          // 因为我们在前端引用文件，需要移除最开始的"/"
+          // Remove leading slash for front-end file references
           const filePathWithoutLeadingSlash = post.markdownFile.replace(/^\//, '');
           const response = await fetch(`/${filePathWithoutLeadingSlash}`);
           if (!response.ok) {
@@ -45,7 +45,7 @@ const BlogPost = () => {
     if (post.markdownFile) {
       loadMarkdownContent();
     }
-  }, [post.markdownFile]);
+  }, [post.markdownFile, post.id]); // Add post.id as dependency to refresh when post changes
 
   return (
     <Layout>
@@ -75,7 +75,7 @@ const BlogPost = () => {
             </div>
           </div>
           
-          {/* 根据内容类型渲染HTML或Markdown */}
+          {/* Render HTML content if available */}
           {post.content && (
             <div 
               className="prose prose-lg max-w-none"
@@ -83,6 +83,7 @@ const BlogPost = () => {
             />
           )}
           
+          {/* Render Markdown content if available */}
           {post.markdownFile && markdownContent && (
             <div className="prose prose-lg max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -91,6 +92,7 @@ const BlogPost = () => {
             </div>
           )}
           
+          {/* Show loading indicator while markdown is loading */}
           {post.markdownFile && !markdownContent && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-aqua border-t-transparent"></div>
