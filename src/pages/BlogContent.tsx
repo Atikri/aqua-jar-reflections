@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 
 const BlogContent = () => {
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { markdownFile } = useParams<{ markdownFile?: string }>();
   
   // Parse the blog post ID from the URL
@@ -34,19 +35,25 @@ const BlogContent = () => {
     const loadMarkdownContent = async () => {
       if (post.markdownFile) {
         try {
-          // Remove leading slash for front-end file references
+          // Remove leading slash if present for consistent handling
           const filePathWithoutLeadingSlash = post.markdownFile.replace(/^\//, '');
           console.log("Attempting to load markdown from:", filePathWithoutLeadingSlash);
+          
+          // Use a more direct approach to fetch the markdown file
           const response = await fetch(`/${filePathWithoutLeadingSlash}`);
+          
           if (!response.ok) {
             throw new Error(`Failed to load markdown: ${response.status}`);
           }
+          
           const content = await response.text();
-          console.log("Markdown content loaded successfully");
+          console.log("Markdown content loaded successfully", content.substring(0, 100) + "...");
           setMarkdownContent(content);
+          setError(null);
         } catch (error) {
           console.error("Error loading markdown:", error);
-          setMarkdownContent("**Error loading markdown content**");
+          setError("加载Markdown内容时出错，请检查文件路径是否正确。");
+          setMarkdownContent(null);
         }
       }
     };
@@ -55,6 +62,7 @@ const BlogContent = () => {
     
     // Clear any existing content first
     setMarkdownContent(null);
+    setError(null);
     
     if (post.markdownFile) {
       loadMarkdownContent();
@@ -64,6 +72,7 @@ const BlogContent = () => {
     return () => {
       console.log("Cleaning up markdown content for post:", post.id);
       setMarkdownContent(null);
+      setError(null);
     };
   }, [post]);
 
@@ -114,8 +123,16 @@ const BlogContent = () => {
             </div>
           )}
           
+          {/* Show error message if markdown loading failed */}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+              <p>{error}</p>
+              <p className="text-sm mt-1">文件路径: {post.markdownFile}</p>
+            </div>
+          )}
+          
           {/* Show loading indicator while markdown is loading */}
-          {post.markdownFile && !markdownContent && (
+          {post.markdownFile && !markdownContent && !error && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-aqua border-t-transparent"></div>
             </div>

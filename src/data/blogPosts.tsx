@@ -208,7 +208,7 @@ export const blogPosts: BlogPost[] = [
     category: "旅行"
   },
   
-  // 新增的Markdown格式博客
+  // 已有的Markdown博客
   {
     id: 7,
     title: "使用Markdown撰写博客",
@@ -217,6 +217,18 @@ export const blogPosts: BlogPost[] = [
     date: "2023-06-01",
     author: "tikri",
     tags: ["Markdown", "写作", "技巧"],
+    category: "技术"
+  },
+  
+  // 新增的Markdown博客
+  {
+    id: 8,
+    title: "我的新博客文章",
+    excerpt: "这是一篇新创建的Markdown格式博客文章，展示Markdown的基本用法...",
+    markdownFile: "src/content/blog/my-new-post.md", // 注意这里不需要前导斜杠
+    date: "2023-06-10",
+    author: "tikri",
+    tags: ["Markdown", "博客", "教程"],
     category: "技术"
   }
 ];
