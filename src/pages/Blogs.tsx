@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,7 @@ const Blogs = () => {
                             <span>•</span>
                             <span>{post.category}</span>
                           </div>
-                          <Link to={`/blog/${post.markdownFile}`} state={{ postId: post.id }}>
+                          <Link to={`/blogs/${post.id}`}>
                             <h3 className="text-xl font-semibold mb-2 hover:text-aqua-dark">
                               {post.title}
                             </h3>
@@ -94,7 +95,7 @@ const Blogs = () => {
                               <Badge key={tag} variant="outline">{tag}</Badge>
                             ))}
                           </div>
-                          <Link to={`/blog/${post.markdownFile}`} state={{ postId: post.id }} className="text-aqua-dark hover:text-aqua flex items-center text-sm font-medium">
+                          <Link to={`/blogs/${post.id}`} className="text-aqua-dark hover:text-aqua flex items-center text-sm font-medium">
                             阅读更多 <ArrowRight className="ml-1 h-3 w-3" />
                           </Link>
                         </CardContent>
