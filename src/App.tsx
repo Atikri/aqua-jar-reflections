@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +8,7 @@ import Blogs from "./pages/Blogs";
 import Music from "./pages/Music";
 import About from "./pages/About";
 import Search from "./pages/Search";
-import BlogPost from "./pages/BlogPost";
+import BlogContent from "./pages/BlogContent"; // 修改为 BlogContent
 import NotFound from "./pages/NotFound";
 import Videos from "./pages/Videos";
 
@@ -24,7 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/blogs" element={<Blogs />} />
-          <Route path="/blogs/:id" element={<BlogPost />} />
+          <Route path="/blog/:markdownFile" element={<BlogContent />} /> {/* 修改路径和组件 */}
           <Route path="/music" element={<Music />} />
           <Route path="/about" element={<About />} />
           <Route path="/search" element={<Search />} />
