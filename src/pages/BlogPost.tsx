@@ -1,5 +1,5 @@
 
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,17 +12,21 @@ import { useEffect, useState } from "react";
 
 const BlogPost = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
   
-  const numericId = id ? parseInt(id) : 0;
-  console.log("Parsed numeric ID:", numericId, "Raw ID from params:", id);
+  // Parse the ID correctly - ensure it's treated as a number for comparison
+  const numericId = id ? parseInt(id, 10) : 0;
+  
+  console.log("BlogPost rendering with ID:", numericId, "Raw ID string:", id);
+  console.log("Location state:", location.state);
   
   // Find the blog post with the matching ID from URL params
   const post = blogPosts.find(post => post.id === numericId);
   
   // If no post is found, redirect to 404 page
   if (!post) {
-    console.log("No post found with ID:", numericId);
+    console.error("No post found with ID:", numericId);
     return <Navigate to="/404" replace />;
   }
 
@@ -33,11 +37,13 @@ const BlogPost = () => {
         try {
           // Remove leading slash for front-end file references
           const filePathWithoutLeadingSlash = post.markdownFile.replace(/^\//, '');
+          console.log("Attempting to load markdown from:", filePathWithoutLeadingSlash);
           const response = await fetch(`/${filePathWithoutLeadingSlash}`);
           if (!response.ok) {
             throw new Error(`Failed to load markdown: ${response.status}`);
           }
           const content = await response.text();
+          console.log("Markdown content loaded successfully");
           setMarkdownContent(content);
         } catch (error) {
           console.error("Error loading markdown:", error);
@@ -46,18 +52,23 @@ const BlogPost = () => {
       }
     };
 
+    console.log("useEffect running for post:", post.id, post.title);
+    
+    // Clear any existing content first (important for switching between posts)
+    setMarkdownContent(null);
+    
     if (post.markdownFile) {
       loadMarkdownContent();
-    } else {
-      // Reset markdown content when viewing non-markdown posts
-      setMarkdownContent(null);
     }
     
-    // Clean up function to clear markdown content when unmounting
-    return () => setMarkdownContent(null);
-  }, [post.markdownFile, post.id, numericId]); // Add numericId as dependency
+    // Clean up function to clear markdown content when unmounting or post changes
+    return () => {
+      console.log("Cleaning up markdown content for post:", post.id);
+      setMarkdownContent(null);
+    };
+  }, [numericId, post]); // Use numericId and post as dependencies
 
-  console.log("Current post ID:", numericId, "Post found:", post.title, "Has markdown:", !!post.markdownFile);
+  console.log("Rendering post:", post.title, "Post ID:", post.id, "Has markdown:", !!post.markdownFile);
 
   return (
     <Layout>
