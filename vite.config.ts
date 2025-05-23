@@ -19,4 +19,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  base: "/aqua-jar-reflections/", // 这一行非常重要
+  build: {
+    outDir: "docs", // 将构建输出目录改为 'docs'
+    emptyOutDir: true, // 构建前清空输出目录
+  },
 }));
