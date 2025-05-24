@@ -14,13 +14,13 @@ export interface MusicTrack {
 export const musicTracks: MusicTrack[] = [
   {
     id: 1,
-    title: "雨后的天空",
-    artist: "tikri",
+    title: "没有咖啡的噄茶店",
+    artist: "AGA",
     duration: "3:45",
     date: "2023-05-10",
-    category: "原创",
+    category: "instrumental",
     cover: "/placeholder.svg",
-    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_700KB.mp3"
+    url: "https://atikri.github.io/aqua-jar-reflections/music/AGA-A.teahouse.with.no.coffee(Instrumental).flac"
   },
   {
     id: 2,
