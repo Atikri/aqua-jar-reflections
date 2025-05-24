@@ -24,30 +24,157 @@ const Music = () => {
     );
   };
 
-  const handlePlayPause = (trackId: number) => {
+  // 检查浏览器对音频格式的支持
+  const checkAudioSupport = (url: string) => {
+    const audio = document.createElement('audio');
+    const extension = url.split('.').pop()?.toLowerCase();
+    
+    switch (extension) {
+      case 'mp3':
+        return audio.canPlayType('audio/mpeg');
+      case 'wav':
+        return audio.canPlayType('audio/wav');
+      case 'ogg':
+        return audio.canPlayType('audio/ogg');
+      case 'flac':
+        return audio.canPlayType('audio/flac');
+      case 'm4a':
+        return audio.canPlayType('audio/mp4');
+      default:
+        return '';
+    }
+  };
+
+  const handlePlayPause = async (trackId: number) => {
+    const track = musicTracks.find(t => t.id === trackId);
+    
+    if (!track) {
+      console.error("找不到音轨:", trackId);
+      toast.error("找不到音轨");
+      return;
+    }
+
+    console.log("尝试播放音轨:", track.title, "文件路径:", track.file);
+    
+    // 检查浏览器对该音频格式的支持
+    const support = checkAudioSupport(track.file);
+    console.log("浏览器对该音频格式的支持:", support);
+    
+    if (!support || support === '') {
+      const extension = track.file.split('.').pop()?.toLowerCase();
+      toast.error(`浏览器不支持 ${extension?.toUpperCase()} 格式的音频文件`);
+      console.error("浏览器不支持该音频格式:", extension);
+      return;
+    }
+
     if (currentTrack === trackId) {
       // 如果是当前播放的曲目，切换播放/暂停
       if (isPlaying) {
+        console.log("暂停音频");
         audioRef.current?.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current?.play();
-        setIsPlaying(true);
+        console.log("恢复播放音频");
+        try {
+          await audioRef.current?.play();
+          console.log("音频播放成功");
+          setIsPlaying(true);
+        } catch (error) {
+          console.error("音频播放失败:", error);
+          toast.error("无法播放此音频文件: " + (error as Error).message);
+        }
       }
     } else {
       // 如果选择了新曲目
+      console.log("加载新音轨:", track.file);
       setCurrentTrack(trackId);
-      const track = musicTracks.find(t => t.id === trackId);
-      if (track && audioRef.current) {
+      
+      if (audioRef.current) {
+        // 先暂停当前播放
+        audioRef.current.pause();
+        
+        // 清理之前的事件监听器
+        audioRef.current.onloadstart = null;
+        audioRef.current.oncanplay = null;
+        audioRef.current.onerror = null;
+        audioRef.current.onloadeddata = null;
+        
+        // 设置新的音频源
         audioRef.current.src = track.file;
-        audioRef.current.play()
-          .then(() => {
-            setIsPlaying(true);
-          })
-          .catch(error => {
-            console.error("播放失败:", error);
-            toast.error("无法播放此音频文件");
-          });
+        
+        // 添加详细的音频事件监听器
+        audioRef.current.onloadstart = () => {
+          console.log("开始加载音频:", track.file);
+        };
+        
+        audioRef.current.oncanplay = () => {
+          console.log("音频可以播放");
+        };
+        
+        audioRef.current.onloadeddata = () => {
+          console.log("音频数据加载完成");
+        };
+        
+        audioRef.current.onerror = (e) => {
+          console.error("音频加载错误:", e);
+          console.error("音频元素错误代码:", audioRef.current?.error?.code);
+          console.error("音频元素错误消息:", audioRef.current?.error?.message);
+          
+          let errorMsg = "音频文件加载失败";
+          if (audioRef.current?.error) {
+            switch (audioRef.current.error.code) {
+              case 1:
+                errorMsg = "音频加载被中止";
+                break;
+              case 2:
+                errorMsg = "网络错误，无法下载音频文件";
+                break;
+              case 3:
+                errorMsg = "音频文件已损坏或格式不支持";
+                break;
+              case 4:
+                errorMsg = "音频文件格式不支持";
+                break;
+              default:
+                errorMsg = "未知的音频播放错误";
+            }
+          }
+          
+          toast.error(errorMsg);
+          setIsPlaying(false);
+          setCurrentTrack(null);
+        };
+        
+        // 尝试播放音频
+        try {
+          await audioRef.current.play();
+          console.log("新音频播放成功");
+          setIsPlaying(true);
+        } catch (error) {
+          console.error("新音频播放失败:", error);
+          
+          // 提供更具体的错误信息
+          let errorMsg = "无法播放此音频文件";
+          if (error instanceof DOMException) {
+            switch (error.name) {
+              case 'NotSupportedError':
+                errorMsg = "浏览器不支持此音频格式";
+                break;
+              case 'NotAllowedError':
+                errorMsg = "浏览器阻止了音频播放，请先与页面交互";
+                break;
+              case 'AbortError':
+                errorMsg = "音频播放被中止";
+                break;
+              default:
+                errorMsg = `播放错误: ${error.message}`;
+            }
+          }
+          
+          toast.error(errorMsg);
+          setIsPlaying(false);
+          setCurrentTrack(null);
+        }
       }
     }
   };
@@ -57,6 +184,8 @@ const Music = () => {
     if (!files || files.length === 0) return;
 
     const file = files[0];
+    console.log("上传的文件:", file.name, "类型:", file.type, "大小:", file.size);
+    
     if (!file.type.startsWith('audio/')) {
       toast.error("请上传音频文件");
       return;
@@ -64,6 +193,7 @@ const Music = () => {
 
     // 创建临时URL
     const fileUrl = URL.createObjectURL(file);
+    console.log("创建的文件URL:", fileUrl);
     
     // 获取音频时长
     const audio = new Audio(fileUrl);
@@ -72,6 +202,8 @@ const Music = () => {
       const minutes = Math.floor(duration / 60);
       const seconds = Math.floor(duration % 60);
       const durationString = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+      
+      console.log("音频时长:", durationString);
       
       // 添加新音乐
       const newTrack: MusicTrack = {
@@ -85,15 +217,28 @@ const Music = () => {
         file: fileUrl
       };
 
+      console.log("添加新音轨:", newTrack);
       setMusicTracks([...musicTracks, newTrack]);
       toast.success("音乐上传成功");
+    };
+    
+    audio.onerror = (e) => {
+      console.error("获取音频元数据失败:", e);
+      toast.error("无法读取音频文件信息");
     };
   };
 
   return (
     <Layout>
       {/* 隐藏的音频播放器 */}
-      <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+      <audio 
+        ref={audioRef} 
+        onEnded={() => {
+          console.log("音频播放结束");
+          setIsPlaying(false);
+        }}
+        preload="metadata"
+      />
 
       {/* Music Header */}
       <section className="bg-aqua-light py-12">
