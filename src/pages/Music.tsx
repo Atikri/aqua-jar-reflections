@@ -1,246 +1,132 @@
 
-import React, { useRef, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileAudio, Music as MusicIcon } from "lucide-react";
-import { toast } from "sonner";
-import { musicTracks as initialMusicTracks, MusicTrack } from "@/data/musicTracks";
-import MusicPlayer from "./MusicPlayer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Play, Pause, Upload, Search } from "lucide-react";
+import { musicTracks } from "@/data/musicTracks";
 
 const Music = () => {
-  const musicCategories = ["全部", "原创", "翻唱", "推荐"];
   const [currentTrack, setCurrentTrack] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tracks, setTracks] = useState(musicTracks);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [musicTracks, setMusicTracks] = useState<MusicTrack[]>(initialMusicTracks);
+
+  // 检查浏览器支持的音频格式
+  useEffect(() => {
+    const audio = new Audio();
+    console.log("浏览器音频格式支持:");
+    console.log("MP3:", audio.canPlayType("audio/mpeg"));
+    console.log("WAV:", audio.canPlayType("audio/wav"));
+    console.log("OGG:", audio.canPlayType("audio/ogg"));
+    console.log("M4A:", audio.canPlayType("audio/mp4"));
+  }, []);
+
+  const allCategories = ["全部", ...Array.from(new Set(tracks.map(track => track.category)))];
 
   const filteredTracks = (category: string) => {
-    return musicTracks.filter(track => 
-      category === "全部" || track.category === category
-    );
+    return tracks.filter(track => {
+      const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            track.artist.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = category === "全部" || track.category === category;
+      return matchesSearch && matchesCategory;
+    });
   };
 
-  // 检查浏览器对音频格式的支持
-  const checkAudioSupport = (url: string) => {
-    const audio = document.createElement('audio');
-    const extension = url.split('.').pop()?.toLowerCase();
-    
-    switch (extension) {
-      case 'mp3':
-        return audio.canPlayType('audio/mpeg');
-      case 'wav':
-        return audio.canPlayType('audio/wav');
-      case 'ogg':
-        return audio.canPlayType('audio/ogg');
-      case 'flac':
-        return audio.canPlayType('audio/flac');
-      case 'm4a':
-        return audio.canPlayType('audio/mp4');
-      default:
-        return '';
-    }
-  };
-
-  const handlePlayPause = async (trackId: number) => {
-    const track = musicTracks.find(t => t.id === trackId);
-    
+  const playTrack = (trackId: number) => {
+    const track = tracks.find(t => t.id === trackId);
     if (!track) {
       console.error("找不到音轨:", trackId);
-      toast.error("找不到音轨");
       return;
     }
 
     console.log("尝试播放音轨:", track.title, "文件路径:", track.file);
-    
-    // 检查浏览器对该音频格式的支持
-    const support = checkAudioSupport(track.file);
-    console.log("浏览器对该音频格式的支持:", support);
-    
-    if (!support || support === '') {
-      const extension = track.file.split('.').pop()?.toLowerCase();
-      toast.error(`浏览器不支持 ${extension?.toUpperCase()} 格式的音频文件`);
-      console.error("浏览器不支持该音频格式:", extension);
-      return;
-    }
 
-    if (currentTrack === trackId) {
-      // 如果是当前播放的曲目，切换播放/暂停
-      if (isPlaying) {
-        console.log("暂停音频");
-        audioRef.current?.pause();
-        setIsPlaying(false);
+    if (audioRef.current) {
+      // 添加详细的错误处理
+      audioRef.current.onerror = (e) => {
+        console.error("音频加载错误:", e);
+        const audio = e.target as HTMLAudioElement;
+        if (audio.error) {
+          switch (audio.error.code) {
+            case audio.error.MEDIA_ERR_ABORTED:
+              console.error("音频播放被中止");
+              break;
+            case audio.error.MEDIA_ERR_NETWORK:
+              console.error("网络错误");
+              break;
+            case audio.error.MEDIA_ERR_DECODE:
+              console.error("音频解码错误 - 文件格式可能不受支持");
+              break;
+            case audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+              console.error("音频源不受支持 - 检查文件路径和格式");
+              break;
+            default:
+              console.error("未知音频错误");
+          }
+        }
+      };
+
+      audioRef.current.onloadstart = () => console.log("开始加载音频");
+      audioRef.current.oncanplay = () => console.log("音频可以播放");
+      audioRef.current.onloadeddata = () => console.log("音频数据已加载");
+
+      if (currentTrack === trackId) {
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+          console.log("暂停播放");
+        } else {
+          audioRef.current.play().then(() => {
+            setIsPlaying(true);
+            console.log("开始播放");
+          }).catch(error => {
+            console.error("播放失败:", error);
+          });
+        }
       } else {
-        console.log("恢复播放音频");
-        try {
-          await audioRef.current?.play();
-          console.log("音频播放成功");
-          setIsPlaying(true);
-        } catch (error) {
-          console.error("音频播放失败:", error);
-          toast.error("无法播放此音频文件: " + (error as Error).message);
-        }
-      }
-    } else {
-      // 如果选择了新曲目
-      console.log("加载新音轨:", track.file);
-      setCurrentTrack(trackId);
-      
-      if (audioRef.current) {
-        // 先暂停当前播放
-        audioRef.current.pause();
-        
-        // 清理之前的事件监听器
-        audioRef.current.onloadstart = null;
-        audioRef.current.oncanplay = null;
-        audioRef.current.onerror = null;
-        audioRef.current.onloadeddata = null;
-        
-        // 设置新的音频源
         audioRef.current.src = track.file;
-        
-        // 添加详细的音频事件监听器
-        audioRef.current.onloadstart = () => {
-          console.log("开始加载音频:", track.file);
-        };
-        
-        audioRef.current.oncanplay = () => {
-          console.log("音频可以播放");
-        };
-        
-        audioRef.current.onloadeddata = () => {
-          console.log("音频数据加载完成");
-        };
-        
-        audioRef.current.onerror = (e) => {
-          console.error("音频加载错误:", e);
-          console.error("音频元素错误代码:", audioRef.current?.error?.code);
-          console.error("音频元素错误消息:", audioRef.current?.error?.message);
-          
-          let errorMsg = "音频文件加载失败";
-          if (audioRef.current?.error) {
-            switch (audioRef.current.error.code) {
-              case 1:
-                errorMsg = "音频加载被中止";
-                break;
-              case 2:
-                errorMsg = "网络错误，无法下载音频文件";
-                break;
-              case 3:
-                errorMsg = "音频文件已损坏或格式不支持";
-                break;
-              case 4:
-                errorMsg = "音频文件格式不支持";
-                break;
-              default:
-                errorMsg = "未知的音频播放错误";
-            }
-          }
-          
-          toast.error(errorMsg);
-          setIsPlaying(false);
-          setCurrentTrack(null);
-        };
-        
-        // 尝试播放音频
-        try {
-          await audioRef.current.play();
-          console.log("新音频播放成功");
+        audioRef.current.load(); // 强制重新加载
+        audioRef.current.play().then(() => {
+          setCurrentTrack(trackId);
           setIsPlaying(true);
-        } catch (error) {
-          console.error("新音频播放失败:", error);
-          
-          // 提供更具体的错误信息
-          let errorMsg = "无法播放此音频文件";
-          if (error instanceof DOMException) {
-            switch (error.name) {
-              case 'NotSupportedError':
-                errorMsg = "浏览器不支持此音频格式";
-                break;
-              case 'NotAllowedError':
-                errorMsg = "浏览器阻止了音频播放，请先与页面交互";
-                break;
-              case 'AbortError':
-                errorMsg = "音频播放被中止";
-                break;
-              default:
-                errorMsg = `播放错误: ${error.message}`;
-            }
-          }
-          
-          toast.error(errorMsg);
-          setIsPlaying(false);
-          setCurrentTrack(null);
-        }
+          console.log("播放新音轨:", track.title);
+        }).catch(error => {
+          console.error("播放失败:", error);
+        });
       }
     }
   };
 
-  const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    console.log("上传的文件:", file.name, "类型:", file.type, "大小:", file.size);
-    
-    if (!file.type.startsWith('audio/')) {
-      toast.error("请上传音频文件");
-      return;
-    }
-
-    // 创建临时URL
-    const fileUrl = URL.createObjectURL(file);
-    console.log("创建的文件URL:", fileUrl);
-    
-    // 获取音频时长
-    const audio = new Audio(fileUrl);
-    audio.onloadedmetadata = () => {
-      const duration = audio.duration;
-      const minutes = Math.floor(duration / 60);
-      const seconds = Math.floor(duration % 60);
-      const durationString = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
-      
-      console.log("音频时长:", durationString);
-      
-      // 添加新音乐
-      const newTrack: MusicTrack = {
-        id: Math.max(...musicTracks.map(t => t.id)) + 1,
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const newTrack = {
+        id: Date.now(),
         title: file.name.replace(/\.[^/.]+$/, ""),
-        artist: "tikri",
-        duration: durationString,
+        artist: "用户上传",
+        duration: "未知",
         date: new Date().toISOString().split('T')[0],
-        category: "原创",
+        category: "上传",
         cover: "/placeholder.svg",
-        file: fileUrl
+        file: url
       };
-
-      console.log("添加新音轨:", newTrack);
-      setMusicTracks([...musicTracks, newTrack]);
-      toast.success("音乐上传成功");
-    };
-    
-    audio.onerror = (e) => {
-      console.error("获取音频元数据失败:", e);
-      toast.error("无法读取音频文件信息");
-    };
+      setTracks([newTrack, ...tracks]);
+      console.log("上传新音轨:", newTrack);
+    }
   };
 
   return (
     <Layout>
-      {/* 隐藏的音频播放器 */}
-      <audio 
-        ref={audioRef} 
-        onEnded={() => {
-          console.log("音频播放结束");
-          setIsPlaying(false);
-        }}
-        preload="metadata"
-      />
-
-      {/* Music Header */}
+      <audio ref={audioRef} />
+      
+      {/* Header */}
       <section className="bg-aqua-light py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
@@ -248,142 +134,121 @@ const Music = () => {
               音乐
             </h1>
             <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-              这里收集了我的原创音乐、翻唱以及一些我喜欢的音乐推荐
+              在这里聆听我的音乐作品，包括原创歌曲、翻唱作品和推荐的音乐
             </p>
-            
-            <div className="mt-6">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="bg-aqua-dark hover:bg-aqua">上传音乐</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>上传新音乐</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <p className="text-sm text-gray-500 mb-4">选择要上传的音频文件 (MP3, WAV, OGG 格式)</p>
-                    <input 
-                      type="file" 
-                      accept="audio/*" 
-                      onChange={handleMusicUpload}
-                      className="block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-md file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-aqua-light file:text-aqua-dark
-                        hover:file:bg-aqua-dark hover:file:text-white"
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+          </div>
+        </div>
+      </section>
+
+      {/* Upload and Search Section */}
+      <section className="py-8 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="搜索音乐或艺术家..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="music-upload" className="text-sm font-medium">
+                上传音乐
+              </Label>
+              <div className="relative">
+                <Input
+                  id="music-upload"
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button asChild variant="outline">
+                  <label htmlFor="music-upload" className="cursor-pointer">
+                    <Upload className="mr-2 h-4 w-4" />
+                    上传音乐
+                  </label>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Music Collection */}
+      {/* Music Tracks */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Tabs defaultValue="全部" className="w-full">
-            <TabsList className="mb-8">
-              {musicCategories.map((category) => (
+            <TabsList className="mb-8 flex flex-wrap">
+              {allCategories.map((category) => (
                 <TabsTrigger key={category} value={category}>
                   {category}
                 </TabsTrigger>
               ))}
             </TabsList>
             
-            {musicCategories.map((category) => (
+            {allCategories.map((category) => (
               <TabsContent key={category} value={category}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredTracks(category).map((track) => (
-                    <Card key={track.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="relative h-48 bg-gray-100">
-                        <img 
-                          src={track.cover} 
-                          alt={track.title} 
-                          className="w-full h-full object-cover"
-                        />
-                        <MusicPlayer 
-                          isPlaying={isPlaying}
-                          trackId={track.id}
-                          currentTrackId={currentTrack}
-                          onPlayPause={handlePlayPause}
-                        />
-                      </div>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="text-lg font-semibold">{track.title}</h3>
-                          <Badge variant="outline">{track.category}</Badge>
-                        </div>
-                        <div className="text-sm text-gray-500 mb-2">
-                          {track.artist}
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-500">
-                          <span>{track.date}</span>
-                          <span className="flex items-center">
-                            <FileAudio className="h-3 w-3 mr-1" /> {track.duration}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                {filteredTracks(category).length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredTracks(category).map((track) => (
+                      <Card key={track.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex items-center gap-4 mb-4">
+                            <img 
+                              src={track.cover} 
+                              alt={track.title}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-lg truncate">{track.title}</h3>
+                              <p className="text-gray-600 truncate">{track.artist}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mb-4">
+                            <Badge variant="outline">{track.category}</Badge>
+                            <span className="text-sm text-gray-500">{track.duration}</span>
+                          </div>
+                          
+                          <Button 
+                            onClick={() => playTrack(track.id)}
+                            className="w-full"
+                            variant={currentTrack === track.id && isPlaying ? "secondary" : "default"}
+                          >
+                            {currentTrack === track.id && isPlaying ? (
+                              <>
+                                <Pause className="mr-2 h-4 w-4" />
+                                暂停
+                              </>
+                            ) : (
+                              <>
+                                <Play className="mr-2 h-4 w-4" />
+                                播放
+                              </>
+                            )}
+                          </Button>
+                          
+                          <div className="mt-2 text-xs text-gray-500">
+                            发布于 {track.date}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">没有找到相关音乐</p>
+                  </div>
+                )}
               </TabsContent>
             ))}
           </Tabs>
-        </div>
-      </section>
-      
-      {/* Featured Playlists */}
-      <section className="py-12 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl md:text-3xl font-serif font-semibold text-gray-900 mb-8 text-center">
-            精选歌单
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="overflow-hidden hover:shadow-md transition-shadow">
-              <div className="flex flex-col md:flex-row h-full">
-                <div className="w-full md:w-1/3 bg-gray-100">
-                  <div className="h-full flex items-center justify-center p-6">
-                    <MusicIcon className="h-16 w-16 text-aqua-dark" />
-                  </div>
-                </div>
-                <div className="w-full md:w-2/3 p-6">
-                  <h3 className="text-xl font-semibold mb-2">安静时光</h3>
-                  <p className="text-gray-600 mb-4">
-                    适合独处时聆听的轻柔音乐集合，帮助你放松和沉思...
-                  </p>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span>10 首歌曲</span>
-                    <span className="mx-2">•</span>
-                    <span>45 分钟</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-            
-            <Card className="overflow-hidden hover:shadow-md transition-shadow">
-              <div className="flex flex-col md:flex-row h-full">
-                <div className="w-full md:w-1/3 bg-gray-100">
-                  <div className="h-full flex items-center justify-center p-6">
-                    <MusicIcon className="h-16 w-16 text-aqua-dark" />
-                  </div>
-                </div>
-                <div className="w-full md:w-2/3 p-6">
-                  <h3 className="text-xl font-semibold mb-2">创作灵感</h3>
-                  <p className="text-gray-600 mb-4">
-                    这些音乐作品给了我创作灵感，希望也能激发你的创意...
-                  </p>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span>15 首歌曲</span>
-                    <span className="mx-2">•</span>
-                    <span>65 分钟</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
         </div>
       </section>
     </Layout>
