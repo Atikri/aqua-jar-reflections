@@ -1,3 +1,4 @@
+
 // 音乐数据存储
 export interface MusicTrack {
   id: number;
@@ -19,7 +20,7 @@ export const musicTracks: MusicTrack[] = [
     date: "2023-05-10",
     category: "instrumental",
     cover: "/placeholder.svg",
-    file: "https://atikri.github.io/aqua-jar-reflections/music/AGA-A.teahouse.with.no.coffee(Instrumental).flac"
+    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_1MG.mp3"
   },
   {
     id: 2,
@@ -29,7 +30,7 @@ export const musicTracks: MusicTrack[] = [
     date: "2023-04-20",
     category: "翻唱",
     cover: "/placeholder.svg",
-    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_1MG.mp3"
+    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_2MG.mp3"
   },
   {
     id: 3,
@@ -39,7 +40,7 @@ export const musicTracks: MusicTrack[] = [
     date: "2023-03-15",
     category: "翻唱",
     cover: "/placeholder.svg",
-    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_2MG.mp3"
+    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_5MG.mp3"
   },
   {
     id: 4,
@@ -49,7 +50,7 @@ export const musicTracks: MusicTrack[] = [
     date: "2023-02-25",
     category: "原创",
     cover: "/placeholder.svg",
-    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_5MG.mp3"
+    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_700KB.mp3"
   },
   {
     id: 5,
@@ -59,7 +60,7 @@ export const musicTracks: MusicTrack[] = [
     date: "2023-01-30",
     category: "推荐",
     cover: "/placeholder.svg",
-    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_700KB.mp3"
+    file: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
   },
   {
     id: 6,
@@ -69,6 +70,6 @@ export const musicTracks: MusicTrack[] = [
     date: "2023-01-15",
     category: "推荐",
     cover: "/placeholder.svg",
-    file: "https://file-examples.com/storage/fe19e15eac6560f8c936254/2017/11/file_example_MP3_1MG.mp3"
+    file: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
   }
 ];
