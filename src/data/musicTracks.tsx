@@ -1,4 +1,3 @@
-
 // 音乐数据存储
 export interface MusicTrack {
   id: number;
@@ -20,7 +19,7 @@ export const musicTracks: MusicTrack[] = [
     date: "2023-05-10",
     category: "instrumental",
     cover: "/placeholder.svg",
-    url: "https://atikri.github.io/aqua-jar-reflections/music/AGA-A.teahouse.with.no.coffee(Instrumental).flac"
+    file: "https://atikri.github.io/aqua-jar-reflections/music/AGA-A.teahouse.with.no.coffee(Instrumental).flac"
   },
   {
     id: 2,

@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,28 +24,61 @@ const Music = () => {
   };
 
   const handlePlayPause = (trackId: number) => {
+    const track = musicTracks.find(t => t.id === trackId);
+    
+    if (!track) {
+      console.error("找不到音轨:", trackId);
+      toast.error("找不到音轨");
+      return;
+    }
+
+    console.log("尝试播放音轨:", track.title, "文件路径:", track.file);
+
     if (currentTrack === trackId) {
       // 如果是当前播放的曲目，切换播放/暂停
       if (isPlaying) {
+        console.log("暂停音频");
         audioRef.current?.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current?.play();
-        setIsPlaying(true);
-      }
-    } else {
-      // 如果选择了新曲目
-      setCurrentTrack(trackId);
-      const track = musicTracks.find(t => t.id === trackId);
-      if (track && audioRef.current) {
-        audioRef.current.src = track.file;
-        audioRef.current.play()
+        console.log("恢复播放音频");
+        audioRef.current?.play()
           .then(() => {
+            console.log("音频播放成功");
             setIsPlaying(true);
           })
           .catch(error => {
-            console.error("播放失败:", error);
-            toast.error("无法播放此音频文件");
+            console.error("音频播放失败:", error);
+            toast.error("无法播放此音频文件: " + error.message);
+          });
+      }
+    } else {
+      // 如果选择了新曲目
+      console.log("加载新音轨:", track.file);
+      setCurrentTrack(trackId);
+      
+      if (audioRef.current) {
+        // 先暂停当前播放
+        audioRef.current.pause();
+        audioRef.current.src = track.file;
+        
+        // 添加音频事件监听器
+        audioRef.current.onloadstart = () => console.log("开始加载音频");
+        audioRef.current.oncanplay = () => console.log("音频可以播放");
+        audioRef.current.onerror = (e) => {
+          console.error("音频加载错误:", e);
+          toast.error("音频文件加载失败，请检查文件路径");
+        };
+        
+        audioRef.current.play()
+          .then(() => {
+            console.log("新音频播放成功");
+            setIsPlaying(true);
+          })
+          .catch(error => {
+            console.error("新音频播放失败:", error);
+            toast.error("无法播放此音频文件: " + error.message);
+            setIsPlaying(false);
           });
       }
     }
@@ -57,6 +89,8 @@ const Music = () => {
     if (!files || files.length === 0) return;
 
     const file = files[0];
+    console.log("上传的文件:", file.name, "类型:", file.type, "大小:", file.size);
+    
     if (!file.type.startsWith('audio/')) {
       toast.error("请上传音频文件");
       return;
@@ -64,6 +98,7 @@ const Music = () => {
 
     // 创建临时URL
     const fileUrl = URL.createObjectURL(file);
+    console.log("创建的文件URL:", fileUrl);
     
     // 获取音频时长
     const audio = new Audio(fileUrl);
@@ -72,6 +107,8 @@ const Music = () => {
       const minutes = Math.floor(duration / 60);
       const seconds = Math.floor(duration % 60);
       const durationString = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+      
+      console.log("音频时长:", durationString);
       
       // 添加新音乐
       const newTrack: MusicTrack = {
@@ -85,15 +122,28 @@ const Music = () => {
         file: fileUrl
       };
 
+      console.log("添加新音轨:", newTrack);
       setMusicTracks([...musicTracks, newTrack]);
       toast.success("音乐上传成功");
+    };
+    
+    audio.onerror = (e) => {
+      console.error("获取音频元数据失败:", e);
+      toast.error("无法读取音频文件信息");
     };
   };
 
   return (
     <Layout>
       {/* 隐藏的音频播放器 */}
-      <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+      <audio 
+        ref={audioRef} 
+        onEnded={() => {
+          console.log("音频播放结束");
+          setIsPlaying(false);
+        }}
+        preload="metadata"
+      />
 
       {/* Music Header */}
       <section className="bg-aqua-light py-12">
